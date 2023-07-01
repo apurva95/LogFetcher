@@ -1,3 +1,6 @@
+using LogFetcher.Services.Implementation;
+using LogFetcher.Services.Interface;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -11,7 +14,7 @@ builder.Services.AddCors(options =>
     });
 });
 builder.Services.AddControllers();
-
+builder.Services.AddScoped<ILogFetcherService, LogFetcherService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
