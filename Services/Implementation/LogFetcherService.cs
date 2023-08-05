@@ -1,19 +1,10 @@
-﻿using Elasticsearch.Net;
-using LogFetcher.Models;
+﻿using LogFetcher.Models;
 using LogFetcher.Services.Interface;
 using MongoDB.Driver;
 using Nest;
-using IronPdf;
-using System;
-using System.Globalization;
 using System.Text;
-using System.Security.Cryptography.Xml;
-using System.Xml;
 using Amazon.S3;
 using Amazon.S3.Transfer;
-using Amazon.S3.Model;
-using System.Net;
-using SharpCompress.Common;
 using HtmlAgilityPack;
 
 namespace LogFetcher.Services.Implementation
@@ -90,131 +81,6 @@ namespace LogFetcher.Services.Implementation
             bool exists = response.Exists;
             return exists;
         }
-
- //       public async Task<List<LogMessage>> GetLogs(string uniqueId)
- //       {
- //           List<LogMessage> logMsgs = new();
- //           var scrollResponse = await _elasticClient.SearchAsync<LogMessage>(s => s
- //                                  .Index(uniqueId)
- //                                  .Size(2) // Set the initial batch size
- //                                  .Scroll("1m") // Set the scroll time window
- //                                  );
- //           while (scrollResponse.Documents.Any())
- //           {
- //               logMsgs.AddRange(scrollResponse.Documents);
-
- //               // Get the next batch using the scroll ID
- //               scrollResponse = await _elasticClient.ScrollAsync<LogMessage>("1m", scrollResponse.ScrollId);
- //           }
- //           return logMsgs.OrderBy(x => x.TimeStamp).Select(x => new LogMessage { Level = GetType(x.Level), Message = x.Message, TimeStamp = x.TimeStamp }).ToList();
- //       }
-
- //       public async Task<List<LogMessage>> SearchLogs(string uniqueId, string searchTerm)
- //       {
- //           try
- //           {
- //               var searchResponse = await _elasticClient.SearchAsync<LogMessage>(s => s.Index(uniqueId)
- //                   .Query(q => q.MultiMatch(x => x.Fields(z => z.Field(e => e.Level).Field(e => e.Message)).Query(searchTerm))
- //                   ).Highlight(h => h
- //           .Fields(f => f
- //               .Field(ff => ff.Message).Field(x => x.Level)
- //           )
- //       )
- //               // Add other search parameters and aggregations as needed
- //               );
- //               var logs = searchResponse.Hits.Select(h => h.Source);
- //               return logs.OrderBy(x => x.TimeStamp).Select(x => new LogMessage { Level = GetType(x.Level), Message = x.Message, TimeStamp = x.TimeStamp }).ToList();
-
- //           }
- //           catch (Exception e)
- //           {
- //               return new();
-
- //           }
- //       }
-
- //       public async Task<List<LogMessage>> SearchLogsBasedOnTimeRange(string uniqueId, string from, string to)
- //       {
- //           try
- //           {
- //               List<LogMessage> logMsgs = new();
- //               ISearchResponse<LogMessage> scrollResponse = await _elasticClient.SearchAsync<LogMessage>(s => s
- //    .Index(uniqueId)
- //    .Query(q => q
- //        .DateRange(dr => dr
- //            .Field(f => f.TimeStamp)
- //            .GreaterThanOrEquals(Convert.ToDateTime(from))
- //            .LessThanOrEquals(Convert.ToDateTime(to))
- //        )
- //    )
- //    .Size(2) // Set the initial batch size
- //    .Scroll("1m") // Set the scroll time window
- //);
-
- //               while (scrollResponse.Documents.Any())
- //               {
- //                   logMsgs.AddRange(scrollResponse.Documents);
-
- //                   // Get the next batch using the scroll ID
- //                   scrollResponse = await _elasticClient.ScrollAsync<LogMessage>("1m", scrollResponse.ScrollId);
- //               }
-
- //               return logMsgs
- //                   .OrderBy(x => x.TimeStamp)
- //                   .Select(x => new LogMessage { Level = GetType(x.Level), Message = x.Message, TimeStamp = x.TimeStamp })
- //                   .ToList();
- //           }
- //           catch (Exception ex)
- //           {
- //               return new List<LogMessage>();
- //           }
- //       }
-
- //       public async Task<List<LogMessage>> SearchLogsBasedOnLevel(string uniqueId, string level)
- //       {
- //           try
- //           {
- //               List<LogMessage> logMsgs = new();
- //               ISearchResponse<LogMessage> scrollResponse;
- //               if (level == "All")
- //               {
- //                   scrollResponse = await _elasticClient.SearchAsync<LogMessage>(s => s
- //                                   .Index(uniqueId)
- //                                   .Size(2) // Set the initial batch size
- //                                   .Scroll("1m") // Set the scroll time window
- //                                   );
- //               }
- //               else
- //               {
- //                   scrollResponse = await _elasticClient.SearchAsync<LogMessage>(s => s.Index(uniqueId)
- //           .Query(q => q
- //               .Terms(t => t
- //                   .Field(f => f.Level)
- //                   .Terms(new List<string> { level.ToLower() })
- //               )
- //           ).Size(2) // Set the initial batch size
- //                                       .Scroll("1m") // Set the scroll time window
- //       );
- //               }
- //               while (scrollResponse.Documents.Any())
- //               {
- //                   logMsgs.AddRange(scrollResponse.Documents);
-
- //                   // Get the next batch using the scroll ID
- //                   scrollResponse = await _elasticClient.ScrollAsync<LogMessage>("1m", scrollResponse.ScrollId);
- //               }
- //               // Perform the search request
- //               //var searchResponse1 = await _elasticClient.SearchAsync<LogMessage>(searchDescriptor);
-
- //               // Process the search results and return them
- //               //var logs = searchResponse.Hits.Select(hit => hit.Source);
- //               return logMsgs.OrderBy(x => x.TimeStamp).Select(x => new LogMessage { Level = GetType(x.Level), Message = x.Message, TimeStamp = x.TimeStamp, CallingFile = x.CallingFile, CallingMethod = x.CallingMethod }).ToList();
- //           }
- //           catch (Exception ex)
- //           {
- //               return new();
- //           }
- //       }
 
         public async Task<Dictionary<string, int>> GetLogsForVisualize(string uniqueId)
         {
