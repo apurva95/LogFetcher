@@ -1,6 +1,9 @@
-﻿using LogFetcher.Services.Implementation;
+﻿using CsvHelper;
 using LogFetcher.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
+using System.Text;
+using LogMessage = LogFetcher.Models.LogMessage;
 
 namespace LogFetcher.Controllers
 {
@@ -28,6 +31,13 @@ namespace LogFetcher.Controllers
         {
             var response = await _logFetcherService.GetAlerts(uniqueId);
             return Ok(response);
+        }
+
+        [HttpGet("doc")]
+        public async Task<IActionResult> GenerateDoc(string uniqueID, string? searchTerm, string type, string? fromDate, string? toDate, string docType)
+        {
+            await _logFetcherService.GenerateDoc(uniqueID, searchTerm, type, fromDate, toDate, docType);
+            return Ok();
         }
 
         //[HttpGet("logs")]
@@ -87,6 +97,7 @@ namespace LogFetcher.Controllers
             var response = await _logFetcherService.GetLogsForVisualizeForLineGraphError(uniqueId);
             return Ok(response);
         }
+
     }
 }
 

@@ -7,6 +7,7 @@ namespace LogFetcher.Services.Interface
     {
         Task<bool> CheckUniqueId(string uniqueId);
         Task<List<Email>> GetAlerts(string uniqueId);
+        Task GenerateDoc(string uniqueID, string? searchTerm, string type, string? fromDate, string? toDate, string docType);
         //Task<List<LogMessage>> GetLogs(string uniqueId);
         //Task<List<LogMessage>> SearchLogs(string uniqueId, string searchTerm);
         //Task<List<LogMessage>> SearchLogsBasedOnLevel(string uniqueId, string level);

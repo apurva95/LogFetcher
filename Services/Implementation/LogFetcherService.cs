@@ -3,9 +3,18 @@ using LogFetcher.Models;
 using LogFetcher.Services.Interface;
 using MongoDB.Driver;
 using Nest;
+using IronPdf;
 using System;
 using System.Globalization;
 using System.Text;
+using System.Security.Cryptography.Xml;
+using System.Xml;
+using Amazon.S3;
+using Amazon.S3.Transfer;
+using Amazon.S3.Model;
+using System.Net;
+using SharpCompress.Common;
+using HtmlAgilityPack;
 
 namespace LogFetcher.Services.Implementation
 {
@@ -260,33 +269,35 @@ namespace LogFetcher.Services.Implementation
 
                 var logMessages = logMsgs.OrderBy(x => x.TimeStamp).ToList();
                 var dict = new Dictionary<string, int>();
-
-                // Get the timestamp of the first log
-                var firstLogTime = logMessages.First().TimeStamp;
-
-                // Get the timestamp of the most recent log
-                var recentLogTime = logMessages.Last().TimeStamp;
-
-                // Initialize the start time at the first log timestamp
-                var startTime = new DateTime(firstLogTime.Year, firstLogTime.Month, firstLogTime.Day, 0, 0, 0);
-
-                // Iterate until the current time reaches or exceeds the recent log timestamp
-                while (startTime <= recentLogTime)
+                if (logMessages.Any())
                 {
-                    // Calculate the end time for the current day
-                    var endTime = startTime.AddDays(1);
+                    // Get the timestamp of the first log
+                    var firstLogTime = logMessages.First().TimeStamp;
 
-                    // Format the day range as "YYYY-MM-dd"
-                    var dayRange = startTime.ToString("dd-MM-yyyy");
+                    // Get the timestamp of the most recent log
+                    var recentLogTime = logMessages.Last().TimeStamp;
 
-                    // Count the number of logs within the day range
-                    var logCount = logMessages.Count(logMessage => logMessage.TimeStamp >= startTime && logMessage.TimeStamp < endTime);
+                    // Initialize the start time at the first log timestamp
+                    var startTime = new DateTime(firstLogTime.Year, firstLogTime.Month, firstLogTime.Day, 0, 0, 0);
 
-                    // Add the day range and log count to the dictionary
-                    dict.Add(dayRange, logCount);
+                    // Iterate until the current time reaches or exceeds the recent log timestamp
+                    while (startTime <= recentLogTime)
+                    {
+                        // Calculate the end time for the current day
+                        var endTime = startTime.AddDays(1);
 
-                    // Update the start time for the next iteration
-                    startTime = endTime;
+                        // Format the day range as "YYYY-MM-dd"
+                        var dayRange = startTime.ToString("dd-MM-yyyy");
+
+                        // Count the number of logs within the day range
+                        var logCount = logMessages.Count(logMessage => logMessage.TimeStamp >= startTime && logMessage.TimeStamp < endTime);
+
+                        // Add the day range and log count to the dictionary
+                        dict.Add(dayRange, logCount);
+
+                        // Update the start time for the next iteration
+                        startTime = endTime;
+                    }
                 }
 
                 return dict;
@@ -318,35 +329,36 @@ namespace LogFetcher.Services.Implementation
 
                 var logMessages = logMsgs.OrderBy(x => x.TimeStamp).ToList();
                 var dict = new Dictionary<string, int>();
-
-                // Get the timestamp of the first log
-                var firstLogTime = logMessages.First().TimeStamp;
-
-                // Get the timestamp of the most recent log
-                var recentLogTime = logMessages.Last().TimeStamp;
-
-                // Initialize the start time at the first log timestamp
-                var startTime = new DateTime(firstLogTime.Year, firstLogTime.Month, firstLogTime.Day, 0, 0, 0);
-
-                // Iterate until the current time reaches or exceeds the recent log timestamp
-                while (startTime <= recentLogTime)
+                if (logMessages.Any())
                 {
-                    // Calculate the end time for the current time slot (3 hours later)
-                    var endTime = startTime.AddHours(3);
+                    // Get the timestamp of the first log
+                    var firstLogTime = logMessages.First().TimeStamp;
 
-                    // Format the time slot range
-                    var timeSlotRange = $"{startTime:dd-MM-yyyy HH:mm} - {endTime:dd-MM-yyyy HH:mm}";
+                    // Get the timestamp of the most recent log
+                    var recentLogTime = logMessages.Last().TimeStamp;
 
-                    // Count the number of error logs within the time slot range
-                    var errorCount = logMessages.Count(logMessage => logMessage.TimeStamp >= startTime && logMessage.TimeStamp < endTime && (logMessage.Level == "Error" || logMessage.Level == "Critical"));
+                    // Initialize the start time at the first log timestamp
+                    var startTime = new DateTime(firstLogTime.Year, firstLogTime.Month, firstLogTime.Day, 0, 0, 0);
 
-                    // Add the time slot range and error count to the dictionary
-                    dict.Add(timeSlotRange, errorCount);
+                    // Iterate until the current time reaches or exceeds the recent log timestamp
+                    while (startTime <= recentLogTime)
+                    {
+                        // Calculate the end time for the current time slot (3 hours later)
+                        var endTime = startTime.AddHours(3);
 
-                    // Update the start time for the next time slot
-                    startTime = endTime;
+                        // Format the time slot range
+                        var timeSlotRange = $"{startTime:dd-MM-yyyy HH:mm} - {endTime:dd-MM-yyyy HH:mm}";
+
+                        // Count the number of error logs within the time slot range
+                        var errorCount = logMessages.Count(logMessage => logMessage.TimeStamp >= startTime && logMessage.TimeStamp < endTime && (logMessage.Level == "Error" || logMessage.Level == "Critical"));
+
+                        // Add the time slot range and error count to the dictionary
+                        dict.Add(timeSlotRange, errorCount);
+
+                        // Update the start time for the next time slot
+                        startTime = endTime;
+                    }
                 }
-
                 return dict;
             }
             catch (Exception e)
@@ -364,7 +376,7 @@ namespace LogFetcher.Services.Implementation
 
                 if (!string.IsNullOrEmpty(searchTerm))
                 {
-                    boolQuery.Must = boolQuery.Must ?? new List<QueryContainer>();
+                    boolQuery.Must ??= new List<QueryContainer>();
                     boolQuery.Must = boolQuery.Must.Append(new QueryStringQuery
                     {
                         Fields = new[] { "level", "message", "timestamp", "callingMethod", "callingFile" },
@@ -418,7 +430,11 @@ namespace LogFetcher.Services.Implementation
                 {
                     Level = GetType(x.Level),
                     Message = x.Message,
-                    TimeStamp = x.TimeStamp
+                    TimeStamp = x.TimeStamp,
+                    CallingFile = x.CallingFile,
+                    CallingMethod = x.CallingMethod,
+                    LevelForDoc = x.Level,
+                    MessageForDoc = x.MessageForDoc
                 }).ToList();
             }
             catch (Exception e)
@@ -429,13 +445,173 @@ namespace LogFetcher.Services.Implementation
 
         public async Task<List<Email>> GetAlerts(string uniqueId)
         {
-            var collection = _database.GetCollection<Registration>("registrations");
-            var data = await collection.FindAsync(x => x.RegistrationId == uniqueId);
-            if (data != null)
+            try
             {
-                return data.First().Emails;
+                var collection = _database.GetCollection<Registration>("registrations");
+                var data = await collection.FindAsync(x => x.RegistrationId == uniqueId);
+                if (data != null)
+                {
+                    return data.First().Emails;
+                }
+            }
+            catch(Exception e)
+            {
+
             }
             return new();
+        }
+
+        public async Task GenerateDoc(string uniqueID, string? searchTerm, string type, string? fromDate, string? toDate, string docType)
+        {
+            var logMessages = await SearchLogsTest(uniqueID, searchTerm, type, fromDate, toDate);
+            // Create HTML content for A4 size paper
+            string htmlContent = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page {{
+            size: landscape;
+        }}
+        body {{
+            font-family: Arial, sans-serif;
+        }}
+        table {{
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: auto;
+        }}
+        th, td {{
+            border: 1px solid #ddd;
+            padding: 8px;
+            word-wrap: break-word;
+        }}
+        thead {{
+            display: table-header-group;
+        }}
+        .ironpdf-watermark-container,
+        .ironpdf-link-container,
+        .ironpdf-link {{
+            display: none !important;
+        }}
+        thead th {{
+            position: sticky;
+            top: 0;
+            background-color: #f5f5f5;
+        }}
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>Timestamp</th>
+                <th>Level</th>
+                <th>Message</th>
+                <th>Calling File</th>
+                <th>Calling Method</th>
+            </tr>
+        </thead>
+        <tbody>";
+
+            foreach (var logMessage in logMessages)
+            {
+                htmlContent += $@"
+    <tr>
+        <td>{logMessage.TimeStamp}</td>
+        <td>{logMessage.LevelForDoc}</td>
+        <td>{logMessage.MessageForDoc}</td>
+        <td>{logMessage.CallingFile}</td>
+        <td>{logMessage.CallingMethod}</td>
+    </tr>";
+            }
+
+            htmlContent += @"
+        </tbody>
+    </table>
+</body>
+</html>";
+            // Upload PDF to S3 bucket
+            string s3BucketName = "loggerfiles";
+            // Create an instance of AmazonS3Client with access key and secret key
+            var credentials = new Amazon.Runtime.BasicAWSCredentials("AKIA5XCKO26F6MWVHWDB", "TToHewimkZMIiuVoPxD8RguDA3vZun2djn2qSjj7");
+            var config = new AmazonS3Config
+            {
+                RegionEndpoint = Amazon.RegionEndpoint.EUWest2
+            };
+            switch (docType)
+            {
+                case "pdf":
+                    var renderer = new HtmlToPdf();
+                    using (var pdf = renderer.RenderHtmlAsPdf(htmlContent))
+                    {
+                        // Save PDF to a file
+                        string fileName = uniqueID + ".pdf";
+                        pdf.SaveAs(fileName);
+                        using (var client = new AmazonS3Client(credentials, config))
+                        {
+                            var bucketExists = await client.ListBucketsAsync();
+                            using (var fileStream = new FileStream(fileName, FileMode.Open))
+                            {
+                                var uploadRequest = new TransferUtilityUploadRequest()
+                                {
+                                    //FilePath = fileName,
+                                    InputStream = fileStream,
+                                    Key = $"logFiles/{fileName}",
+                                    BucketName = s3BucketName,
+                                    CannedACL = S3CannedACL.PublicRead,
+                                    StorageClass = S3StorageClass.StandardInfrequentAccess
+                                };
+                                var transferUtility = new TransferUtility(client);
+                                await transferUtility.UploadAsync(uploadRequest);
+                            }
+                        }
+                        File.Delete(fileName);
+                    }
+                    break;
+                case "csv":
+                    StringBuilder csvContent = new StringBuilder();
+                    csvContent.AppendLine("Timestamp,Level,Message,Calling File,Calling Method");
+
+                    // Load the HTML content into HtmlDocument
+                    var htmlDocument = new HtmlDocument();
+                    htmlDocument.LoadHtml(htmlContent);
+
+                    // Extract table rows from the HTML
+                    var tableRows = htmlDocument.DocumentNode.SelectNodes("//table/tbody/tr");
+
+                    // Iterate over the table rows and extract the data
+                    foreach (var row in tableRows)
+                    {
+                        var cells = row.Descendants("td").Select(cell => cell.InnerText.Trim());
+                        csvContent.AppendLine(string.Join(",", cells));
+                    }
+
+                    string csvFileName = uniqueID + ".csv";
+                    File.WriteAllText(csvFileName, csvContent.ToString());
+
+                    using (var client = new AmazonS3Client(credentials, config))
+                    {
+                        using (var fileStream = new FileStream(csvFileName, FileMode.Open))
+                        {
+                            var uploadRequest = new TransferUtilityUploadRequest()
+                            {
+                                InputStream = fileStream,
+                                Key = $"logFiles/{csvFileName}",
+                                BucketName = s3BucketName,
+                                CannedACL = S3CannedACL.PublicRead,
+                                StorageClass = S3StorageClass.StandardInfrequentAccess
+                            };
+                            var transferUtility = new TransferUtility(client);
+                            await transferUtility.UploadAsync(uploadRequest);
+                        }
+                    }
+
+                    File.Delete(csvFileName);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
