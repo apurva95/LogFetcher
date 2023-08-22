@@ -34,9 +34,9 @@ namespace LogFetcher.Models
         public DateTime CreatedAt { get; set; }
 
         [BsonElement("Emails")]
-        public List<Email> Emails { get; set; }
+        public List<Email>? Emails { get; set; }
 
         [BsonElement("LastEmailAlert")]
-        public DateTime LastEmailAlert { get; set; }
+        public DateTime? LastEmailAlert { get; set; }
     }
 }

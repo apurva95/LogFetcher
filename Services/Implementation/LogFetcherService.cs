@@ -30,7 +30,7 @@ namespace LogFetcher.Services.Implementation
 
         private static IElasticClient CreateElasticClient()
         {
-            var connectionString = "http://localhost:9200/";
+            var connectionString = "http://ec2-13-40-119-127.eu-west-2.compute.amazonaws.com:9200/";
             var settings = new ConnectionSettings(new Uri(connectionString));
             var elasticClient = new ElasticClient(settings);
             return elasticClient;

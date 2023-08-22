@@ -8,10 +8,6 @@ namespace LogFetcher.Services.Interface
         Task<bool> CheckUniqueId(string uniqueId);
         Task<List<Email>> GetAlerts(string uniqueId);
         Task GenerateDoc(string uniqueID, string? searchTerm, string type, string? fromDate, string? toDate, string docType);
-        //Task<List<LogMessage>> GetLogs(string uniqueId);
-        //Task<List<LogMessage>> SearchLogs(string uniqueId, string searchTerm);
-        //Task<List<LogMessage>> SearchLogsBasedOnLevel(string uniqueId, string level);
-        //Task<List<LogMessage>> SearchLogsBasedOnTimeRange(string uniqueId, string from, string to);
         Task<Dictionary<string, int>> GetLogsForVisualize(string uniqueId);
         Task<Dictionary<string, int>> GetLogsForVisualizeForLineGraph(string uniqueId);
         Task<Dictionary<string, int>> GetLogsForVisualizeForLineGraphError(string uniqueId);
