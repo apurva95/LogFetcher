@@ -400,7 +400,7 @@ namespace LogFetcher.Services.Implementation
             // Upload PDF to S3 bucket
             string s3BucketName = "loggerfiles";
             // Create an instance of AmazonS3Client with access key and secret key
-            var credentials = new Amazon.Runtime.BasicAWSCredentials("AKIA5XCKO26F6MWVHWDB", "TToHewimkZMIiuVoPxD8RguDA3vZun2djn2qSjj7");
+            var credentials = new Amazon.Runtime.BasicAWSCredentials("*", "*");
             var config = new AmazonS3Config
             {
                 RegionEndpoint = Amazon.RegionEndpoint.EUWest2
